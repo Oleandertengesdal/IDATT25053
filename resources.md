@@ -17,12 +17,23 @@ A comprehensive collection of resources for learning security in software and cr
 ## 🎮 Online Platforms & CTFs
 
 ### Web Security
+- **[Hacksplaining](https://www.hacksplaining.com/lessons)** - Interactive security lessons covering:
+  - SQL Injection, XSS, CSRF, Clickjacking
+  - Command Injection, XXE, SSRF
+  - Directory Traversal, Session Fixation
+  - Open Redirects, Subdomain Takeover
+  - Insecure Deserialization, and more
 - **[OWASP WebGoat](https://owasp.org/www-project-webgoat/)** - Deliberately insecure web application for learning
-- **[OWASP Juice Shop](https://owasp.org/www-project-juice-shop/)** - Modern vulnerable web app
-- **[DVWA (Damn Vulnerable Web Application)](http://www.dvwa.co.uk/)** - PHP/MySQL web app for testing
+- **[OWASP Juice Shop](https://owasp.org/www-project-juice-shop/)** - Modern vulnerable web app with challenges
+- **[DVWA (Damn Vulnerable Web Application)](http://www.dvwa.co.uk/)** - PHP/MySQL web app with difficulty levels
+- **[bWAPP](http://www.itsecgames.com/)** - Buggy Web Application with 100+ vulnerabilities
+- **[Mutillidae](https://sourceforge.net/projects/mutillidae/)** - Free, vulnerable web application
+- **[WebGoat.NET](https://github.com/jerryhoff/WebGoat.NET)** - .NET version of WebGoat
 - **[Hacker101](https://www.hacker101.com/)** - Free web security class by HackerOne
-- **[PortSwigger Web Security Academy](https://portswigger.net/web-security)** - Free online web security training
-- **[HackTheBox](https://www.hackthebox.eu/)** - Penetration testing labs
+- **[PortSwigger Web Security Academy](https://portswigger.net/web-security)** - Free online web security training with interactive labs
+- **[HackTheBox](https://www.hackthebox.eu/)** - Penetration testing labs and web challenges
+- **[TryHackMe](https://tryhackme.com/)** - Guided rooms for web security
+- **[PentesterLab](https://pentesterlab.com/)** - Hands-on penetration testing exercises
 
 ### Binary Exploitation & Reverse Engineering
 - **[pwnable.kr](http://pwnable.kr/)** - Toddler, rookie, and hacker challenges
@@ -146,9 +157,22 @@ A comprehensive collection of resources for learning security in software and cr
 - **[0x00sec](https://0x00sec.org/)** - Hacker community forum
 
 ### OWASP Resources
-- **[OWASP Top 10](https://owasp.org/www-project-top-ten/)** - Top web security risks
-- **[OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)** - Security cheatsheets
+- **[OWASP Top 10](https://owasp.org/www-project-top-ten/)** - Top 10 web application security risks
+- **[OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)** - Security cheatsheets collection
 - **[OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)** - Web security testing methodology
+- **[OWASP Mobile Security Testing Guide](https://owasp.org/www-project-mobile-security-testing-guide/)** - Mobile app security
+- **[OWASP API Security Top 10](https://owasp.org/www-project-api-security/)** - API security risks
+- **[OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/)** - Application Security Verification Standard
+- **[OWASP ModSecurity Core Rule Set](https://owasp.org/www-project-modsecurity-core-rule-set/)** - WAF rules
+
+### Ethical Hacking & Penetration Testing
+- **[Hack The Box Academy](https://academy.hackthebox.com/)** - Structured learning paths
+- **[TryHackMe](https://tryhackme.com/)** - Beginner-friendly cybersecurity training
+- **[VulnHub](https://www.vulnhub.com/)** - Vulnerable VMs for practice
+- **[Proving Grounds](https://www.offensive-security.com/labs/)** - OffSec practice labs
+- **[PentesterLab Bootcamp](https://pentesterlab.com/bootcamp)** - Web penetration testing
+- **[Cyber Defenders](https://cyberdefenders.org/)** - Blue team challenges
+- **[AttackDefense](https://attackdefense.com/)** - Hands-on labs
 
 ## 📺 YouTube Channels
 
@@ -205,6 +229,33 @@ A comprehensive collection of resources for learning security in software and cr
 ### Paper Repositories
 - **[arXiv Computer Security](https://arxiv.org/list/cs.CR/recent)** - Preprints
 - **[IACR ePrint](https://eprint.iacr.org/)** - Cryptography papers
+
+## 🐛 Bug Bounty & Vulnerability Research
+
+### Bug Bounty Platforms
+- **[HackerOne](https://www.hackerone.com/)** - Leading bug bounty platform
+- **[Bugcrowd](https://www.bugcrowd.com/)** - Crowdsourced security testing
+- **[Intigriti](https://www.intigriti.com/)** - European bug bounty platform
+- **[YesWeHack](https://www.yeswehack.com/)** - Global bug bounty platform
+- **[Synack](https://www.synack.com/)** - Vetted researchers only
+- **[Open Bug Bounty](https://www.openbugbounty.org/)** - Non-profit responsible disclosure
+
+### Bug Bounty Learning
+- **[Hacker101](https://www.hacker101.com/)** - Free bug bounty training
+- **[PentesterLab](https://pentesterlab.com/)** - Web pentesting exercises
+- **[Bug Bounty Hunter](https://www.bugbountyhunter.com/)** - Methodologies and tips
+- **[HackerOne Hacktivity](https://hackerone.com/hacktivity)** - Disclosed reports
+
+## 🎓 Certifications & Career
+
+### Security Certifications
+- **[CEH](https://www.eccouncil.org/programs/certified-ethical-hacker-ceh/)** - Certified Ethical Hacker
+- **[OSCP](https://www.offensive-security.com/pwk-oscp/)** - Offensive Security Certified Professional
+- **[OSWE](https://www.offensive-security.com/awae-oswe/)** - Web Expert
+- **[eWPT](https://elearnsecurity.com/product/ewpt-certification/)** - Web Application Penetration Tester
+- **[GPEN](https://www.giac.org/certification/penetration-tester-gpen)** - GIAC Penetration Tester
+- **[CompTIA Security+](https://www.comptia.org/certifications/security)** - Entry-level security
+- **[CISSP](https://www.isc2.org/Certifications/CISSP)** - Security management (advanced)
 
 ## 🔍 Vulnerability Databases & References
 
