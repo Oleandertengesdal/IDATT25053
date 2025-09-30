@@ -2,6 +2,24 @@
 
 A comprehensive collection of resources for learning security in software and cryptography.
 
+## 🌟 Recommended Starting Points
+
+### For Web Security & Ethical Hacking
+1. **[Hacksplaining](https://www.hacksplaining.com/lessons)** - Start here! Interactive lessons with real exploits
+2. **[PortSwigger Web Security Academy](https://portswigger.net/web-security)** - Free comprehensive labs
+3. **[OWASP WebGoat](https://owasp.org/www-project-webgoat/)** - Hands-on vulnerable application
+4. **[Our Exercises](../exercises/web-security/)** - Practice challenges with solutions
+
+### For Binary Exploitation
+1. **[pwnable.kr](http://pwnable.kr/)** - Progressive challenges from toddler to hacker
+2. **[Nightmare Course](https://guyinatuxedo.github.io/)** - Comprehensive binary exploitation
+3. **[pwn.college](https://pwn.college/)** - University-level materials
+
+### For CTF Competitions
+1. **[picoCTF](https://picoctf.org/)** - Best for beginners
+2. **[HackTheBox](https://www.hackthebox.eu/)** - Intermediate to advanced
+3. **[CTFtime](https://ctftime.org/)** - Find live competitions
+
 ## 📚 Table of Contents
 
 - [Online Platforms & CTFs](#online-platforms--ctfs)
