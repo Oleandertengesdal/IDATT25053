@@ -1,0 +1,73 @@
+# Compiled files
+*.o
+*.obj
+*.exe
+*.out
+*.so
+*.dll
+*.dylib
+*.a
+
+# Executables
+a.out
+target
+program
+fuzzer
+*_asan
+*_msan
+*_tsan
+*_ubsan
+process_example
+stack_overflow
+
+# Directories
+build/
+bin/
+obj/
+dist/
+.cache/
+__pycache__/
+*.egg-info/
+
+# Fuzzing artifacts
+findings/
+crashes/
+hangs/
+queue/
+sync/
+corpus/
+*.cur_input
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+asan.log*
+msan.log*
+tsan.log*
+ubsan.log*
+
+# Core dumps
+core
+core.*
+vgcore.*
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Python
+*.pyc
+*.pyo
+venv/
+env/
+
+# Node
+node_modules/
