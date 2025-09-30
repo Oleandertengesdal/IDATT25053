@@ -17,6 +17,8 @@ fuzzer
 *_msan
 *_tsan
 *_ubsan
+process_example
+stack_overflow
 
 # Directories
 build/
