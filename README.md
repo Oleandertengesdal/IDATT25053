@@ -32,11 +32,13 @@ This course covers essential topics in software security and cryptography:
 │   ├── web-security.md               # Web vulnerabilities & OWASP
 │   ├── system-programming.md         # POSIX & secure coding
 │   └── sanitizers.md                 # Memory & security sanitizers
-└── examples/                          # Practical code examples
-    ├── cryptography/                 # Crypto implementations
-    ├── fuzzing/                      # Fuzz targets
-    ├── binary-exploitation/          # Vulnerable programs
-    └── system-programming/           # POSIX examples
+├── examples/                          # Practical code examples
+│   ├── cryptography/                 # Crypto implementations
+│   ├── fuzzing/                      # Fuzz targets
+│   ├── binary-exploitation/          # Vulnerable programs
+│   └── system-programming/           # POSIX examples
+└── exercises/                         # Hands-on practice exercises
+    └── web-security/                 # Web hacking challenges with solutions
 ```
 
 ## 🎯 Quick Start
@@ -58,17 +60,27 @@ Practical code examples demonstrating concepts:
 - [Binary Exploitation Examples](examples/binary-exploitation/) - Vulnerable programs
 - [System Programming Examples](examples/system-programming/) - POSIX API usage
 
+### Exercises
+Hands-on practice challenges with detailed solutions:
+- [Web Security Exercises](exercises/web-security/) - SQL Injection, XSS, CSRF, SSRF, Command Injection, and more
+
 ### Resources
 Check [resources.md](resources.md) for curated learning materials including:
 - OWASP resources and projects
-- WebGoat, Hacker101, and other CTF platforms
+- Hacksplaining, WebGoat, Hacker101, and other platforms
+- Bug bounty programs and certifications
 - Books, courses, and tools for security research
 
 ## 🛠️ Practical Platforms & Tools
 
 ### Hands-On Learning Platforms
+- **[Hacksplaining](https://www.hacksplaining.com/lessons)** - Interactive security lessons with real exploits
 - **[OWASP WebGoat](https://owasp.org/www-project-webgoat/)** - Web security training
+- **[OWASP Juice Shop](https://owasp.org/www-project-juice-shop/)** - Modern vulnerable web app
+- **[PortSwigger Web Security Academy](https://portswigger.net/web-security)** - Free interactive labs
 - **[Hacker101](https://www.hacker101.com/)** - Free security training with CTF
+- **[TryHackMe](https://tryhackme.com/)** - Guided cybersecurity rooms
+- **[HackTheBox](https://www.hackthebox.eu/)** - Penetration testing labs
 - **[picoCTF](https://picoctf.org/)** - Beginner-friendly CTF platform
 - **[OverTheWire](https://overthewire.org/wargames/)** - Wargames for security skills
 - **[pwnable.kr](http://pwnable.kr/)** - Binary exploitation challenges
