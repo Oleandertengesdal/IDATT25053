@@ -1,0 +1,10 @@
+build
+main.s
+main.o
+a_function.s
+a_function.o
+more_functions.s
+more_functions.o
+libfunctions.a
+libfunctions.so
+c_example
