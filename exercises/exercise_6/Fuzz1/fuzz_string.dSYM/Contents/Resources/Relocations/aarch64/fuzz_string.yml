@@ -1,0 +1,37 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     fuzz_string
+relocations:
+  - { offset: 0x26, size: 0x8, addend: 0x0, symName: _replace_html_entities, symObjAddr: 0x0, symBinAddr: 0x100006FC4, symSize: 0x1C8 }
+  - { offset: 0x3B, size: 0x8, addend: 0x0, symName: _.str, symObjAddr: 0x520, symBinAddr: 0x100007660, symSize: 0x0 }
+  - { offset: 0x66, size: 0x8, addend: 0x0, symName: _.str.1, symObjAddr: 0x540, symBinAddr: 0x100007680, symSize: 0x0 }
+  - { offset: 0x83, size: 0x8, addend: 0x0, symName: _.str.2, symObjAddr: 0x560, symBinAddr: 0x1000076A0, symSize: 0x0 }
+  - { offset: 0x94, size: 0x8, addend: 0x0, symName: _.str.3, symObjAddr: 0x580, symBinAddr: 0x1000076C0, symSize: 0x0 }
+  - { offset: 0xB1, size: 0x8, addend: 0x0, symName: _.str.4, symObjAddr: 0x5A0, symBinAddr: 0x1000076E0, symSize: 0x0 }
+  - { offset: 0xCE, size: 0x8, addend: 0x0, symName: _.str.5, symObjAddr: 0x5C0, symBinAddr: 0x100007700, symSize: 0x0 }
+  - { offset: 0xEB, size: 0x8, addend: 0x0, symName: _.str.9, symObjAddr: 0x5E0, symBinAddr: 0x100007720, symSize: 0x0 }
+  - { offset: 0x108, size: 0x8, addend: 0x0, symName: _.str.10, symObjAddr: 0x600, symBinAddr: 0x100007740, symSize: 0x0 }
+  - { offset: 0x119, size: 0x8, addend: 0x0, symName: _.str.11, symObjAddr: 0x620, symBinAddr: 0x100007760, symSize: 0x0 }
+  - { offset: 0x136, size: 0x8, addend: 0x0, symName: _.str.12, symObjAddr: 0x660, symBinAddr: 0x1000077A0, symSize: 0x0 }
+  - { offset: 0x147, size: 0x8, addend: 0x0, symName: _.str.13, symObjAddr: 0x680, symBinAddr: 0x1000077C0, symSize: 0x0 }
+  - { offset: 0x158, size: 0x8, addend: 0x0, symName: _.str.14, symObjAddr: 0x6C0, symBinAddr: 0x100007800, symSize: 0x0 }
+  - { offset: 0x169, size: 0x8, addend: 0x0, symName: _.str.15, symObjAddr: 0x6E0, symBinAddr: 0x100007820, symSize: 0x0 }
+  - { offset: 0x186, size: 0x8, addend: 0x0, symName: _.str.16, symObjAddr: 0x720, symBinAddr: 0x100007860, symSize: 0x0 }
+  - { offset: 0x197, size: 0x8, addend: 0x0, symName: _.str.17, symObjAddr: 0x740, symBinAddr: 0x100007880, symSize: 0x0 }
+  - { offset: 0x1B4, size: 0x8, addend: 0x0, symName: _.str.18, symObjAddr: 0x780, symBinAddr: 0x1000078C0, symSize: 0x0 }
+  - { offset: 0x1C5, size: 0x8, addend: 0x0, symName: _.str.19, symObjAddr: 0x7A0, symBinAddr: 0x1000078E0, symSize: 0x0 }
+  - { offset: 0x1E2, size: 0x8, addend: 0x0, symName: _.str.20, symObjAddr: 0x7C0, symBinAddr: 0x100007900, symSize: 0x0 }
+  - { offset: 0x1F3, size: 0x8, addend: 0x0, symName: _.str.21, symObjAddr: 0x800, symBinAddr: 0x100007940, symSize: 0x0 }
+  - { offset: 0x204, size: 0x8, addend: 0x0, symName: _.str.22, symObjAddr: 0xB60, symBinAddr: 0x100007CA0, symSize: 0x0 }
+  - { offset: 0x221, size: 0x8, addend: 0x0, symName: _.str.23, symObjAddr: 0x820, symBinAddr: 0x100007960, symSize: 0x0 }
+  - { offset: 0x23E, size: 0x8, addend: 0x0, symName: _.str.24, symObjAddr: 0x860, symBinAddr: 0x1000079A0, symSize: 0x0 }
+  - { offset: 0x25B, size: 0x8, addend: 0x0, symName: _.str.25, symObjAddr: 0x8C0, symBinAddr: 0x100007A00, symSize: 0x0 }
+  - { offset: 0x26C, size: 0x8, addend: 0x0, symName: _.str.26, symObjAddr: 0x8E0, symBinAddr: 0x100007A20, symSize: 0x0 }
+  - { offset: 0x289, size: 0x8, addend: 0x0, symName: _.str.27, symObjAddr: 0x900, symBinAddr: 0x100007A40, symSize: 0x0 }
+  - { offset: 0x29A, size: 0x8, addend: 0x0, symName: _.str.28, symObjAddr: 0x940, symBinAddr: 0x100007A80, symSize: 0x0 }
+  - { offset: 0x2AB, size: 0x8, addend: 0x0, symName: _.str.30, symObjAddr: 0x960, symBinAddr: 0x100007AA0, symSize: 0x0 }
+  - { offset: 0x2B9, size: 0x8, addend: 0x0, symName: _replace_html_entities, symObjAddr: 0x0, symBinAddr: 0x100006FC4, symSize: 0x1C8 }
+  - { offset: 0x3A9, size: 0x8, addend: 0x0, symName: _LLVMFuzzerTestOneInput, symObjAddr: 0x1C8, symBinAddr: 0x10000718C, symSize: 0x98 }
+  - { offset: 0x467, size: 0x8, addend: 0x0, symName: _test_case, symObjAddr: 0x260, symBinAddr: 0x100007224, symSize: 0x80 }
+  - { offset: 0x517, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x2E0, symBinAddr: 0x1000072A4, symSize: 0x1C0 }
+...
