@@ -3,9 +3,9 @@ section .data
     msg_len equ $ - msg - 1
 
 section .text
-    global _main
+    global start
 
-_main:
+start:
     mov rcx, 3                  ; Set counter to 3
 
 top:
