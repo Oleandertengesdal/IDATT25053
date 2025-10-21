@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./vulnerable_app:/app/vulnerable_app
+      - ./secure_app:/app/secure_app
+      - ./tests:/app/tests
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:///lab01.db
+    command: python run.py
+    networks:
+      - lab-network
+
+networks:
+  lab-network:
+    driver: bridge

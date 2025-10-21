@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /app/files
+
+# Set environment variables
+ENV FLASK_APP=run.py
+ENV PYTHONPATH=/app
+
+EXPOSE 5000
+
+CMD ["python", "run.py"]
