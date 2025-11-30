@@ -1,0 +1,17 @@
+Yesterday at 03:14 UTC our internal CTF test server was compromised.
+
+An unknown attacker deployed a custom ransomware named WanaSmile. The malware scanned the server for files containing the string "flag{" and encrypted every match.
+
+We managed to exfiltrate:
+
+encrypted.flag (the encrypted flag file)
+chall.py (the reverse engineered ransomware source code used by the attacker)
+The attacker left no ransom note, no Bitcoin address, and disappeared. Our incident response team believes the ransomware was rushed and contains a critical cryptographic flaw related to key generation.
+
+Your task: Recover the original flag by any means necessary.
+
+Attachments:
+
+encrypted.flag
+chall.py
+Good luck. The flag is in the standard flag{...} format.

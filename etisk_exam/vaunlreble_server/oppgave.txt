@@ -1,0 +1,7 @@
+Can you develop a functional exploit for the TRUN command in the attached Vulnserver instance?
+
+The exploit should be written in Python and must provide a reverse shell when executed.
+
+Please document every step of the process with screenshots and code samples.
+
+When you complete the task, you may add flag{ed3} to receive the points.
